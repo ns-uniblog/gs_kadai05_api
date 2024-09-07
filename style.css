@@ -1,0 +1,142 @@
+body {
+    font-family: "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    background-color: #f5f5f5;
+    overflow: hidden; /* 全体のスクロールを無効にする */
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: 100vh; /* ビューポート全体を占めるように */
+}
+
+.left, .right {
+    width: 50%;
+    padding: 10px;
+    margin: 10px;
+    box-sizing: border-box;
+    overflow-y: auto; /* 垂直スクロールを有効にする */
+}
+
+.left {
+    border-right: 1px solid #ddd;
+    background-color: #ffe66d;
+}
+
+.right {
+    background-color: #4ecdc4;
+}
+
+#output, #boughtOutput {
+    overflow: auto; /* コンテンツのスクロールを有効にする */
+}
+
+textarea {
+    width: 99%;
+    font-size: 1rem;
+}
+
+button {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    background-color: #ff6b6b;
+    color:white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #4ecdc4;
+}
+
+input[type="text"] {
+    width: 100%;
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.remove, .update, .complete {
+    cursor: pointer;
+    margin-left: 5px;
+    color: #007BFF;
+}
+
+.remove:hover {
+    background-color: #ffcccc;
+}
+
+.update:hover {
+    background-color: #ffffcc;
+}
+
+.complete:hover {
+    background-color: #ccffcc;
+}
+
+.timestamp {
+    font-size: 0.8em;
+    color: gray;
+    margin-right: 5px;
+}
+
+.chat-item, .bought-item {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.timestamp {
+    font-size: 0.8em;
+    color: gray;
+    margin-right: 5px;
+}
+
+a {
+    color: #007BFF;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.rakuten-preview {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fafafa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.rakuten-preview img {
+    max-width: 100%;
+    height: auto;
+}
+
+.rakuten-preview p {
+    margin: 5px 0;
+}
+
+.rakuten-preview .item-details {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #333;
+}
+
+#uname, #rakutenUrl, #rakutenItemId {
+    margin-bottom: 5px;
+    width: 98%;
+}

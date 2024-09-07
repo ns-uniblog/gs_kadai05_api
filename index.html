@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お買い物リスト</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 左側: chat -->
+        <div class="left">
+            <h2>買いたいもの🎁</h2>
+            <div>
+                <input type="text" id="uname" placeholder="記入者">
+            </div>
+            <div>
+                <textarea id="text" placeholder="買いたいもの" cols="30" rows="10"></textarea>
+                <input type="text" id="rakutenUrl" placeholder="Rakuten URL">
+                <input type="text" id="rakutenItemId" placeholder="Rakuten Item ID">
+                <button id="send">送信</button>
+            </div>
+            <div id="output"></div>
+        </div>
+
+        <!-- 右側: bought -->
+        <div class="right">
+            <h2>買ったもの👍</h2>
+            <div id="boughtOutput"></div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getDatabase, ref, push, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } 
+        from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "*****",
+            authDomain: "*****",
+            projectId: "*****",
+            storageBucket: "*****",
+            messagingSenderId: "*****",
+            appId: "*****"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const chatRef = ref(db, "chat");
+        const boughtRef = ref(db, "bought");
+        
+        $("#send").on("click", function() {
+            const uname = $("#uname").val().trim() || "記入者：なし";
+            const text = $("#text").val().trim() || "買いたいもの：なし";
+            const rakutenUrl = $("#rakutenUrl").val().trim() || "Rakuten URL：なし";
+            const rakutenItemId = $("#rakutenItemId").val().trim() || "Rakuten Item ID：なし";
+        
+            const msg = {
+                uname: uname,
+                text: text,
+                rakutenUrl: rakutenUrl,
+                rakutenItemId: rakutenItemId,
+                timestamp: new Date().toLocaleString()
+            };
+        
+            const newPostRef = push(chatRef);
+            set(newPostRef, msg).then(() => {
+                location.reload();
+            });
+        });
+        
+        $("#output").on("click", ".complete", function() {
+            const key = $(this).attr("data-key");
+            const timestamp = new Date().toLocaleString();
+            const msg = {
+                uname: $("#" + key + '_uname').text(),
+                text: $("#" + key + '_text').text(),
+                rakutenUrl: $("#" + key + '_url').text(),
+                rakutenItemId: $("#" + key + '_itemId').text(),
+                timestamp: $("#" + key + '_timestamp').text(),
+                completedAt: timestamp
+            };
+        
+            // Add preview information to boughtRef
+            const moveRef = push(boughtRef);
+            set(moveRef, msg);
+        
+            // Remove chat item
+            remove(ref(db, "chat/" + key)).then(() => {
+                location.reload();
+            });
+        });
+        
+        onChildAdded(chatRef, function(data) {
+            const msg = data.val();
+            const key = data.key;
+            let rakutenUrlHtml = msg.rakutenUrl;
+            let rakutenPreviewHtml = '';
+        
+            if (msg.rakutenItemId !== "Rakuten Item ID：なし") {
+                rakutenUrlHtml = `<a href="${msg.rakutenUrl}" target="_blank">${msg.rakutenUrl}</a>`;
+                rakutenPreviewHtml = `<div class="rakuten-preview" id="preview-${key}"></div>`;
+                fetch(`https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601?applicationId=*****&itemCode=${msg.rakutenItemId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const item = data.Items[0]?.Item;
+                        const imageUrl = item?.mediumImageUrls[0]?.imageUrl;
+                        const itemName = item?.itemName;
+                        const itemPrice = item?.itemPrice;
+                        if (imageUrl && itemName && itemPrice !== undefined) {
+                            $(`#preview-${key}`).html(`
+                                <img src="${imageUrl}" alt="Rakuten商品画像" class="rakuten-image">
+                                <p>商品名: ${itemName}</p>
+                                <p>価格: ¥${itemPrice}</p>
+                            `);
+                        }
+                    });
+            }
+        
+            let h = `<p id="${key}" class="chat-item">
+                        <span class="timestamp" id="${key}_timestamp">${msg.timestamp}</span>
+                        <span class="update" data-key="${key}">更新</span>
+                        <span class="complete" data-key="${key}">完了</span>
+                        <span class="remove" data-key="${key}">削除</span><br>
+                        <span id="${key}_uname">${msg.uname}</span><br>
+                        <span id="${key}_text" contentEditable="true">${msg.text}</span><br>
+                        <span id="${key}_url">${rakutenUrlHtml}</span><br>
+                        <span id="${key}_itemId">${msg.rakutenItemId}</span><br>
+                        ${rakutenPreviewHtml}
+                     </p>`;
+            $("#output").prepend(h);
+        });
+        
+        onChildAdded(boughtRef, function(data) {
+            const msg = data.val();
+            const key = data.key;
+            let rakutenUrlHtml = msg.rakutenUrl;
+            let rakutenPreviewHtml = '';
+        
+            if (msg.rakutenItemId !== "Rakuten Item ID：なし") {
+                rakutenUrlHtml = `<a href="${msg.rakutenUrl}" target="_blank">${msg.rakutenUrl}</a>`;
+                rakutenPreviewHtml = `<div class="rakuten-preview" id="preview-${key}"></div>`;
+                fetch(`https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601?applicationId=1035818254336312259&itemCode=${msg.rakutenItemId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const item = data.Items[0]?.Item;
+                        const imageUrl = item?.mediumImageUrls[0]?.imageUrl;
+                        const itemName = item?.itemName;
+                        const itemPrice = item?.itemPrice;
+                        if (imageUrl && itemName && itemPrice !== undefined) {
+                            $(`#preview-${key}`).html(`
+                                <img src="${imageUrl}" alt="Rakuten商品画像" class="rakuten-image">
+                                <p>商品名: ${itemName}</p>
+                                <p>価格: ¥${itemPrice}</p>
+                            `);
+                        }
+                    });
+            }
+        
+            let h = `<p id="${key}" class="bought-item">
+                        <span class="timestamp">${msg.timestamp}</span>
+                        <span class="remove" data-key="${key}">削除</span><br>
+                        <span>${msg.uname}</span><br>
+                        <span>${msg.text}</span><br>
+                        <span>${rakutenUrlHtml}</span><br>
+                        <span>${msg.rakutenItemId}</span><br>
+                        <span class="timestamp">${msg.completedAt} 完了</span><br>
+                        ${rakutenPreviewHtml}
+                     </p>`;
+            $("#boughtOutput").prepend(h);
+        });
+        
+        $("#output").on("click", ".remove", function() {
+            const key = $(this).attr("data-key");
+            remove(ref(db, "chat/" + key)).then(() => {
+                location.reload();
+            });
+        });
+        
+        $("#output").on("click", ".update", function() {
+            const key = $(this).attr("data-key");
+            update(ref(db, "chat/" + key), {
+                text: $("#" + key + '_text').html()
+            }).then(() => {
+                location.reload();
+            });
+        });
+        
+        $("#boughtOutput").on("click", ".remove", function() {
+            const key = $(this).attr("data-key");
+            remove(ref(db, "bought/" + key)).then(() => {
+                location.reload();
+            });
+        });
+        
+        onChildRemoved(chatRef, function(data) {
+            $("#" + data.key).remove();
+        });
+        
+        onChildChanged(chatRef, function(data) {
+            $("#" + data.key + '_text').html(data.val().text);
+            $("#" + data.key + '_text').fadeOut(800).fadeIn(800);
+        });
+        
+        onChildRemoved(boughtRef, function(data) {
+            $("#" + data.key).remove();
+        });
+
+        </script>
+        
+</body>
+</html>
